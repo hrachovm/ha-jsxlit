@@ -1,4 +1,7 @@
-const parse = (strs, vals, {/* options */ }) => {
+const _nameValid = _name => true
+const _htmlDecode = text => typeof text !== 'string' ? text : text.replace('&quot;', '"')
+
+const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode }) => {
   const stack = [], TEXT = 1, NODE = 2, PROPS = 3, VALUE = 4
   let mode = TEXT,
     buffer = '',
@@ -32,12 +35,11 @@ const parse = (strs, vals, {/* options */ }) => {
   const pushContent = () => push([])
 
   const pushNode = name => {
-    // if (!validName(buffer)) throw new Error()
+    if (typeof name === 'string' && !nameValid(buffer)) throw new Error()
     return push([name, [{}, {}]])
   }
 
   const popNode = (name, autoclosed = false) => {
-    // if (!validName(buffer)) throw new Error()
     if (!autoclosed) { // self-closing node
       if (!stack.length) throw new Error()
       node = stack.pop() // node points to the parent node
@@ -57,7 +59,7 @@ const parse = (strs, vals, {/* options */ }) => {
   }
 
   const setProp = (name, val) => {
-    // if (typeof val === 'string') val = htmlDecode(val)
+    if (typeof val === 'string') val = htmlDecode(val)
     if (typeof name !== 'string') node[1].push(name) // ${name}
     else node[1][typeof val === 'number' ? 1 : 0][name] = val // name=${val} : name | name="val"
   }

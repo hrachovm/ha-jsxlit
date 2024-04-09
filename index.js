@@ -1,5 +1,6 @@
 import { getHyperlit } from "./hyperlit/to-test.js"
 import { getJsxlit } from "./jsxlit.js"
+import { invalidJsx } from "./invalid-jsx.js"
 
 const h = (name, props, children) => `<${name} ${JSON.stringify(props)}>${Array.isArray(children) ? `[${children.join(', ')}]` : children}</${name}>`
 const text = t => `~${t}~`
@@ -88,5 +89,6 @@ const testJsxlit = () => {
   console.log(todoList({ label: 'TODOs', items: ['milk', 'butter', 'bread'] }))
 }
 
-testHyperlit()
-testJsxlit()
+invalidJsx(h, text)
+// testHyperlit()
+// testJsxlit()

@@ -1,6 +1,11 @@
 const _nameValid = _name => true
 const _htmlDecode = text => typeof text !== 'string' ? text : text.replace('&quot;', '"')
 
+const lastNodesNames = stack => {
+  const lastNode = stack.findLast(item => Array.isArray(item))
+  return !lastNode ? [] : [lastNode[0], ...lastNodesNames(lastNode[2] || [])]
+}
+
 const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode }) => {
   const stack = [], TEXT = 1, NODE = 2, PROPS = 3, VALUE = 4
   let mode = TEXT,
@@ -9,6 +14,8 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
     node = [],
     newline = false,
     slash = false
+
+  const errMsg = msg => `JSX Error: <${lastNodesNames(stack[0]).map(name => typeof name === 'string' ? name : `c#${name}`).join('><')}${msg}`
 
   const ws = ch => ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r'
 
@@ -49,7 +56,7 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
     }
 
     if (typeof node[0] === 'string') {
-      if (node[0] !== name) throw new Error() // <a></b>
+      if (node[0] !== name) throw new Error(errMsg(`></${name}>`)) // <a></b>
     } else {
       if (name !== '/' && vals[node[0]] !== vals[name]) throw new Error() // <${a}></${b}> + support for <${a}>...<//>
     }

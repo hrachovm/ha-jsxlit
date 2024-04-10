@@ -15,7 +15,7 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
     newline = false,
     slash = false
 
-  const errMsg = msg => `JSX Error: <${lastNodesNames(stack[0]).map(name => typeof name === 'string' ? name : `c#${name}`).join('><')}${msg}`
+  const errMsg = msg => new Error(`JSX Error: <${lastNodesNames(stack[0]).map(name => typeof name === 'string' ? name : `c#${name}`).join('><')}${msg}`)
 
   const ws = ch => ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r'
 
@@ -42,26 +42,26 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
   const pushContent = () => push([])
 
   const pushNode = name => {
-    if (typeof name === 'string' && !nameValid(buffer)) throw new Error()
+    if (typeof name === 'string' && !nameValid(buffer)) throw new Error('E001')
     return push([name, [{}, {}]])
   }
 
   const popNode = (name, autoclosed = false) => {
     if (!autoclosed) { // self-closing node
-      if (!stack.length) throw new Error()
+      if (!stack.length) throw new Error('E002')
       node = stack.pop() // node points to the parent node
-      if (node.length !== 3) throw new Error()
+      if (node.length !== 3) throw new Error('E003')
       if (!Object.keys(node[1][1]).length) node[1][1] = false // no vProps
       if (!node[2].length) node.pop() // no content
     }
 
     if (typeof node[0] === 'string') {
-      if (node[0] !== name) throw new Error(errMsg(`></${name}>`)) // <a></b>
+      if (node[0] !== name) throw errMsg(`></${name}>`) // <a></b>
     } else {
-      if (name !== '/' && vals[node[0]] !== vals[name]) throw new Error() // <${a}></${b}> + support for <${a}>...<//>
+      if (name !== '/' && vals[node[0]] !== vals[name]) throw errMsg(`></${name}>`) // <${a}></${b}> + support for <${a}>...<//>
     }
 
-    if (!stack.length) throw new Error()
+    if (!stack.length) throw new Error('E005')
     node = stack.pop() // node points to the parent content
   }
 
@@ -95,9 +95,9 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
           break
         case NODE: // closing nodes | < name>
           if (ch === '<') {
-            throw new Error() // < <
+            throw new Error('E006') // < <
           } else if (ch === '>') { // < / name > | < / / > | < name>
-            if (buffer === '') throw new Error() // < > | < / >
+            if (buffer === '') throw new Error('E007') // < > | < / >
             if (slash) { // < / name > | < / / >
               popNode(buffer)
             } else { // < name> - it's more conveniet to handle it here than passing to PROPS
@@ -107,7 +107,7 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
             setMode(TEXT)
           } else if (ch === '/') { // < name / | < / | < / /
             if (slash) {
-              if (buffer !== '') throw new Error() // < name / / | < / / /
+              if (buffer !== '') throw new Error('E008') // < name / / | < / / /
               buffer = '/' // < / /
             } else {
               slash = true
@@ -126,16 +126,16 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
               }
             }
           } else {
-            if (name !== '') throw new Error() // < name ... | < / name ...
-            if (typeof buffer !== 'string') throw new Error() // < ${val}n
+            if (name !== '') throw errMsg(` ${ch}`) // < name ... | < / name ...
+            if (typeof buffer !== 'string') throw new Error('E010') // < ${val}n
             buffer += ch
           }
           break
         case PROPS:
           if (ch === '<') {
-            throw new Error() // < <
+            throw new Error('E011') // < <
           } else if (ch === '>') { // props> | props/> | name > | name/ >
-            if (name !== '') throw new Error() // prop = > prop = / >
+            if (name !== '') throw errMsg(` ${name}= >`) // prop = > prop = / >
             if (buffer !== '') {
               setProp(buffer, true)
             }
@@ -146,15 +146,16 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
             }
             setMode(TEXT)
           } else if (ch === '/') { // name p / >
-            if (slash) throw new Error() // // name p / / >
+            if (slash) throw new Error('E013') // // name p / / >
             slash = true
           } else if (ch === '=') {
-            if (buffer === '') throw new Error() // < name = | < name prop = "val" =
-            if (name !== '') throw new Error() // prop = =
+            if (buffer === '') throw new Error('E014') // < name = | < name prop = "val" =
+            if (typeof buffer !== 'string') throw new Error('E014b') // < name ${foo} =
+            if (name !== '') throw new Error('E015') // prop = =
             name = buffer
             buffer = ''
           } else if (ch === '"') {
-            if (name === '') throw new Error() // prop" | prop "
+            if (name === '') throw new Error('E016') // prop" | prop "
             mode = VALUE
           } else if (ws(ch)) {
             if (buffer !== '') {
@@ -162,8 +163,8 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
               buffer = ''
             }
           } else {
-            if (slash) throw new Error() // // ... / p >
-            if (name !== '') throw new Error() // prop = v
+            if (slash) throw errMsg(` / ${ch}`) // // ... / p >
+            if (name !== '') throw errMsg(` ${name}= >`) // prop = v
             buffer += ch
           }
           break
@@ -172,7 +173,7 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
             setProp(name, buffer)
             setMode(PROPS)
           } else {
-            if (typeof buffer !== 'string') throw new Error() // name = "${foo}x
+            if (typeof buffer !== 'string') throw new Error('E019') // name = "${foo}x
             buffer += ch
           }
           break
@@ -185,13 +186,13 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
         pushText(i)
         setMode(TEXT) // resets state
       } else { // NODE, PROPS, VALUE
-        if (buffer !== '') throw new Error() // name${val}
+        if (buffer !== '') throw new Error('E020') // name${val}
         buffer = i
       }
     }
   }
 
-  if (stack.length) throw new Error() // `a<b>c`
+  if (stack.length) throw new Error('E021') // `a<b>c`
   pushText(buffer, newline)
   return node.length ? node : false
 }

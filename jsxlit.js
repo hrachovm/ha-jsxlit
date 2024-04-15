@@ -135,8 +135,10 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
           if (ch === '<') {
             throw new Error('E011') // < <
           } else if (ch === '>') { // props> | props/> | name > | name/ >
-            if (name !== '') throw errMsg(` ${name}= >`) // prop = > prop = / >
-            if (buffer !== '') {
+            if (name !== '') {
+              if (typeof buffer !== 'string') setProp(name, buffer) // prop = ${val}>
+              else throw errMsg(slash ? ` ${name}= />` : ` ${name}= >`) // prop = > prop = / >
+            } else if (buffer !== '') {
               setProp(buffer, true)
             }
             if (slash) { // props / > | name/ >
@@ -159,7 +161,12 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
             mode = VALUE
           } else if (ws(ch)) {
             if (buffer !== '') {
-              setProp(buffer, true) // prop p
+              if (name !== '') {
+                setProp(name, buffer) // <name p = ${foo} ...
+                name = ''
+              } else {
+                setProp(buffer, true) // <name p ...
+              }
               buffer = ''
             }
           } else {

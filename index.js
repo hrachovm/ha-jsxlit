@@ -28,6 +28,10 @@ const testJsxlit = () => {
   const jsxtest = getJsxlit(h, text, { noEvaluate: true })
   const jsxlit = getJsxlit(h, text)
 
+  console.log('debug:', JSON.stringify(jsxtest`<a b="A"/>`))
+  // console.log('debug:', JSON.stringify(jsxtest`<a><u / ${"x"}></a>`))
+  return
+
   console.log(`<div>
     ${2}  e
   </div>`)
@@ -89,6 +93,6 @@ const testJsxlit = () => {
   console.log(todoList({ label: 'TODOs', items: ['milk', 'butter', 'bread'] }))
 }
 
+testJsxlit()
 jsxTests()
 // testHyperlit()
-// testJsxlit()

@@ -136,9 +136,10 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
             throw new Error('E011') // < <
           } else if (ch === '>') { // props> | props/> | name > | name/ >
             if (name !== '') {
-              if (typeof buffer !== 'string') setProp(name, buffer) // prop = ${val}>
-              else throw errMsg(slash ? ` ${name}= />` : ` ${name}= >`) // prop = > prop = / >
+              if (typeof buffer === 'string') throw errMsg(slash ? ` ${name}= />` : ` ${name}= >`) // prop = > prop = / >
+              setProp(name, buffer) // prop = ${val}>
             } else if (buffer !== '') {
+              if (slash) throw new Error('E012')
               setProp(buffer, true)
             }
             if (slash) { // props / > | name/ >
@@ -161,6 +162,7 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
             mode = VALUE
           } else if (ws(ch)) {
             if (buffer !== '') {
+              if (slash) throw errMsg(` / \${"c#${buffer}"}`) // // ... / p >
               if (name !== '') {
                 setProp(name, buffer) // <name p = ${foo} ...
                 name = ''
@@ -193,7 +195,7 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
         pushText(i)
         setMode(TEXT) // resets state
       } else { // NODE, PROPS, VALUE
-        if (buffer !== '') throw new Error('E020') // name${val}
+        if (buffer !== '') throw errMsg(`></${buffer}\${"c#${i}"}`) //  throw new Error('E020') // name${val}
         buffer = i
       }
     }

@@ -51,9 +51,9 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
       if (!stack.length) throw new Error('E002')
       node = stack.pop() // node points to the parent node
       if (node.length !== 3) throw new Error('E003')
-      if (!Object.keys(node[1][1]).length) node[1][1] = false // no vProps
       if (!node[2].length) node.pop() // no content
     }
+    if (!Object.keys(node[1][1]).length) node[1][1] = false // no vProps
 
     if (typeof node[0] === 'string') {
       if (node[0] !== name) throw errMsg(`></${name}>`) // <a></b>
@@ -150,6 +150,13 @@ const parse = (strs, vals, { nameValid = _nameValid, htmlDecode = _htmlDecode })
             setMode(TEXT)
           } else if (ch === '/') { // name p / >
             if (slash) throw new Error('E013') // // name p / / >
+            if (buffer !== '') { // TODO: the same handling as on line #138 ?
+              if (name !== '') {
+                setProp(name, buffer)
+                name = ''
+              } else setProp(buffer, true)
+              buffer = ''
+            }
             slash = true
           } else if (ch === '=') {
             if (buffer === '') throw new Error('E014') // < name = | < name prop = "val" =

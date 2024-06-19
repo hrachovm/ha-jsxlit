@@ -28,7 +28,7 @@ const testJsxlit = () => {
   const jsxtest = getJsxlit(h, text, { noEvaluate: true })
   const jsxlit = getJsxlit(h, text)
 
-  // console.log('debug:', JSON.stringify(jsxtest`<u / ${"foo"} >`))
+  console.log('debug:', JSON.stringify(jsxtest`<a x=${"val"}/>`))
   return
 
   console.log(`<div>

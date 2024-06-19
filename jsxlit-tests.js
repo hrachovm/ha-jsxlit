@@ -2,17 +2,24 @@ import { getJsxlit } from "./jsxlit.js" // used inside dynamically generated cod
 
 const shouldThrow = value => ([first, ...rest]) => [first, value, ...rest]
 
-const okNodes = [
+const testNodes = [
   ['Simple node with text', '[["a",[{},false],["foo"]]]', '<a>foo</a>'],
 ].map(shouldThrow(false))
 
-const okPropsDynamic = [
-  ['Dynamic props value/01', '[["a",[{},{"x":0}],["foo"]]]', '<a x=${"val"}>foo</a>'],
-  ['Dynamic props value/02', '[["a",[{},{"x":0}],["foo"]]]', '<a x=${"val"} >foo</a>'],
-  ['Spread props/01', '[["a",[{},false,0],["foo"]]]', '<a ${{x:0}}>foo</a>'],
+const testProps = [
+  ['Props: Dynamic value/01', '[["a",[{},{"x":0}],["foo"]]]', '<a x=${"val"}>foo</a>'],
+  ['Props: Dynamic value/02', '[["a",[{},{"x":0}],["foo"]]]', '<a x=${"val"} >foo</a>'],
+  ['Props: Dynamic value/03', '[["a",[{},{"x":0}]]]', '<a x=${"val"}/>'],
+  ['Props: Dynamic value/04', '[["a",[{},{"x":0}]]]', '<a x=${"val"} />'],
+  ['Props: Spread /01', '[["a",[{},false,0],["foo"]]]', '<a ${{x:0}}>foo</a>'],
+  ['Props: Spread /02', '[["a",[{},false,0]]]', '<a ${{x:0}}/>'],
+  ['Props: Spread /03', '[["a",[{},false,0]]]', '<a ${{x:0}} />'],
 ].map(shouldThrow(false))
 
-const errUnsorted = [
+const testNewLines = [
+].map(shouldThrow(false))
+
+const testUnsorted = [
   ['Attribute after node closing/01', 'JSX Error: <u f', '<u></u foo>'],
   ['Attribute after node closing/02', 'JSX Error: <u f', '<u></u foo >'],
   ['Attribute after node closing/03', 'JSX Error: <u></u${"c#0"}', '<u></u ${"foo"}>'],
@@ -62,9 +69,10 @@ const errUnsorted = [
 
 // --- evaluate ---
 export const jsxTests = () => [
-  ...okNodes,
-  ...okPropsDynamic,
-  ...errUnsorted
+  ...testNodes,
+  ...testProps,
+  ...testNewLines,
+  ...testUnsorted
 ].forEach(([label, shouldThrow, expected, lit], index) => {
   const log = (status, msg) => console.log(
     `#${('00' + (index + 1)).slice(-3)} [${status}]`, `${label}:`,
